@@ -254,5 +254,6 @@ const onClick = async () => {
   setCounter(3);
 }
 ```
-이는 총 3번의 렌더링 과정을 실행합니다. 
-첫째로 `setCounter(0)`,`setCounter(1)`둘이 동시에 일괄 처리될 것입니다. 
+이는 총 3번의 렌더링 과정을 실행합니다.  처음엔 `setCounter(0)`,`setCounter(1)`둘이 동시에 일괄 처리될 것입니다.  둘 다 일반적인 이벤트 핸들러 call stack에서 발생하기 때문에,  `unstable_batchedUpdates()` 호출 내에서 발생합니다.
+
+그러나, `setCounter(2)` 호출은 `await`이후에 발생합니다. 이는 기본적인 동기적 call stack이 끝난 뒤, 함수의 나머지 절반은 한참이 지난 후에야 완벽히 분리된 이벤트 루프 call stack에서 호출됨을 의미합니다. 그렇기 때문에, React는 `setCounter(2)` 를 마지막으로 전체 render 과정을 동기적으로 실행하고 동작이 완료되면, `setCounter(2)`를 반환합니다.(?)

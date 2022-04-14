@@ -217,9 +217,9 @@ Key는 list 말고도 컴포넌트 인스턴스 id에 유용합니다. **여러�
 ## Render 일괄 처리 및 타이밍
 기본적으로, 각각의 `setState()`호출은 React가 새로운 render를 진행하게 만들고, 동기적으로 실행하며, 반환하게 합니다. 그런데, React는 자동적으로 렌더링 일괄 처리의 방식으로 일종의 최적화도 자동으로 적용시킵니다. 렌더링 일괄 처리는 여러 가지의 `setState()`호출이 들어왔을 때 결과적으로 조금의 딜레이만으로 단 하나의 렌더링만 대기열에 담아 실행되도록 만들어줍니다. 
 
-React 문서에선 ["state의 업데이트는 비동기적일 수 있다"](https://reactjs.org/docs/state-and-lifecycle.html#state-updates-may-be-asynchronous)라고 언급합니다. 이 말은 이제 설명할 렌더링 일괄처리 동작과 연관되어있습니다.  부분적으로, React는 React의 이벤트 핸들러로에서 발생하는 state 업데이트를 알아서 일괄 처리합니다. React 이벤트 핸들러는 전형적인 React 앱의 코드상 매우 큰 부분을 차지하기 때문에 , 대부분의 state 변경은 실제로 일괄 처리됩니다(?)
+React 문서에선 ["state의 업데이트는 비동기적일 수 있다"](https://reactjs.org/docs/state-and-lifecycle.html#state-updates-may-be-asynchronous)라고 언급합니다. 이 말은 앞으로 설명할 렌더링 일괄처리 동작과 연관되어있습니다.  부분적으로, React는 React의 이벤트 핸들러로에서 발생하는 state 업데이트를 알아서 일괄 처리합니다. React 이벤트 핸들러는 전형적인 React 앱 코드상의 매우 큰 부분을 차지하기 때문에 , 대부분의 state 변경은 실제로 일괄 처리됩니다.
 
-React는 이벤트 핸들러를 위한 렌더링 일괄처리를 `unstable_batchedUpdates`라고 알려진 내부 함수로 감싸서 구현합니다. React는 대기열에 담긴 모든 state 업데이트를 `unstable_batchedUpdates`가 실행되는 동안 추적하며, 후에 단일 render 과정으로 모든 변화 사항을 적용시킵니다. 이벤트 핸들러의 경우, React가 주어진 이벤트에 대해 어떤 핸들러를 호출해야 할 지 이미 정확히 알기 때문에 잘 작동합니다.
+React는 이벤트 핸들러를 위한 렌더링 일괄처리를 `unstable_batchedUpdates`라고 알려진 내부 함수로 감싸서 구현합니다. React는 대기열에 담긴 모든 state 업데이트를 `unstable_batchedUpdates`가 실행되는 동안 추적하며, 후에 단일 render 과정으로 모든 변화 사항을 적용시킵니다. 이벤트 핸들러의 경우, React가 주어진 이벤트에 대해 어떤 핸들러를 호출해야 할 지 이미 정확히 알고있기 때문에 잘 작동합니다.
 
 개념적으로, React가 내부적으로 하는 작업을 이러한 의사 코드로 상상할 수 있습니다:
 ```js
@@ -256,6 +256,14 @@ const onClick = async () => {
 ```
 이는 총 3번의 렌더링 과정을 실행합니다.  처음엔 `setCounter(0)`,`setCounter(1)`둘 다 일반적인 이벤트 핸들러 call stack에서 발생하기 때문에 동시에 일괄 처리되며, `unstable_batchedUpdates()` 호출 내부에서 발생합니다.
 
-그러나, `setCounter(2)` 호출은 `await`이후에 발생합니다. 이는 기본적인 동기적 call stack이 끝난 뒤, 함수의 나머지 절반은 한참이 지난 후에야 완벽히 분리된 이벤트 루프 call stack에서 호출됨을 의미합니다. 그렇기 때문에, React는 `setCounter(2)` 를 마지막으로 전체 render 과정을 동기적으로 실행하고 동작이 완료되면, `setCounter(2)`를 반환합니다.(?)
+그러나, `setCounter(2)` 호출은 `await`이후에 발생합니다. 이는 기본적인 동기적 call stack이 끝난 뒤, 함수의 나머지 절반은 한참이 지난 후에야 완벽히 분리된 이벤트 루프 call stack에서 호출됨을 의미합니다. 그렇기 때문에, React는 `setCounter(2)` 직전까지 동기적으로 실행하고, `await`처리가 끝나면, `setCounter(2)`로 돌아옵니다.
 
-그러면 `setCounter(3)`또한 원래의 이벤트 핸들러 외부에서 실행되므로, 
+그러면 `setCounter(3)`또한 원래의 이벤트 핸들러 외부에서 실행되는데다가, 일괄 처리 밖에서 처리되는 같은 일이 일어납니다.
+
+commit phase 내부의 라이프사이클엔 `componentDidMount`, `componentDidUpdate`, `useLayoutEffect` 세가지의 추가적인 예외 케이스가 있습니다. 이들은 렌더링 과정을 지나고 추가적인 로직을 수행할 수 있게 해주며, 브라우저가 화면을 그리기 이전에 시행됩니다. 보통 사용하는 예시는,
+ - 부분적이지만 불완전한 데이터를 포함하는 컴포넌트를 최초로 렌더링할 때
+ - commit phase 라이프사이클에서, ref를 사용한 페이지에 존재하는 실제 DOM 노드의 진짜 사이즈를 측정해야 할 때.
+ - 이러한 측정을 기반으로 하는 state를 정해야 할 때
+ - 업데이트된 데이터로 즉시 화면을 재렌더링 할 때
+
+이런 예시에서, 우리는 초기 "부분적으로" 렌더링되는 UI를 유저에게 보여주는것보단, "최종적으로" 완성된 UI를 사용자들에게 보여주기를 원할겁니다. 브라우저는 수정된 DOM의 구조를 다시 계산하고 만들지만, JS가 이벤트 루프를 막고 여전히 실행되고 있는 동안에는 실제 화면에는 아무것도 그려지지 않을 것입니다. `div.innerHTML = "a"; div.innerHTML = "b"`같은 코드에서 `"a"`는 절대 보이지 않는 것처럼 말이죠.

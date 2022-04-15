@@ -1,3 +1,4 @@
+
 # React 렌더링 동작에 관한 (거의) 완벽한 가이드
 
  이 글은 Marks's Dev Blog의 [Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/#standard-render-behavior)를 번역한 글입니다.
@@ -267,3 +268,14 @@ commit phase 내부의 라이프사이클엔 `componentDidMount`, `componentDidU
  - 업데이트된 데이터로 즉시 화면을 재렌더링 할 때
 
 이런 예시에서, 우리는 초기 "부분적으로" 렌더링되는 UI를 유저에게 보여주는것보단, "최종적으로" 완성된 UI를 사용자들에게 보여주기를 원할겁니다. 브라우저는 수정된 DOM의 구조를 다시 계산하고 만들지만, JS가 이벤트 루프를 막고 여전히 실행되고 있는 동안에는 실제 화면에는 아무것도 그려지지 않을 것입니다. `div.innerHTML = "a"; div.innerHTML = "b"`같은 코드에서 `"a"`는 절대 보이지 않는 것처럼 말이죠.
+
+이러한 이유로, React는 언제나 commit phase 동안 동기적으로 렌더링을 실행할 겁니다. 그러면, 만약 "부분적 -> 최종적" 변경과 같은 업데이트를 수행한다면 오직 "최종적인" 내용만 화면에 표시됩니다.
+
+마지막으로, 제가 아는 한, `useEffect` 내에서의 state 변화는 대기열에 들어가서, "Passive Effect" phase의 마지막에 모든 `useEffect` 콜백이 완료되는 순간 한번에 수행됩니다.
+
+`unstable_batchedUpdates` API가 공개적으로 export되지만,  다음 내용은 주목할 가치가 있습니다:
+ - 이름마다, "unstable"이라는 라벨이 붙어 React API의 공식적으로 지원되는 부분이 아닙니다.
+ - 하지만, React 팀은 "이는 'unstable' API중 가장 안정적인 API이며, Facebook 코드의 절반은 이 함수에 의존합니다" 라고 말했습니다.
+ - `react`에 배포된 나머지 핵심 API들과 달리, `unstable_batchedUpdates`는  `react` 패키지의 항목이 아닌, reconciler-specific(재조정-명세) API입니다. 대신, `react-dom`과 `react-native`에는 배포되어 있습니다. 이는 `react-three-fiber`나 `ink`같은 다른 재조정 관련 도구들도 `unstable_batchedUpdates` 함수를 export하지 않을 것이라는 점을 의미합니다.
+
+React-Redux 7버전에서는, [`unstable_batchedUpdates`를 내부적으로 사용하기 시작했습니다.] (https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/#use-of-react-s-batched-updates-api)

@@ -27,7 +27,7 @@ ___
    - [컴포넌트 타입과 재조정](#컴포넌트-타입과-재조정)
    - [Key와 재조정](#key와-재조정)
    - [Render 일괄 처리 및 타이밍](#render-일괄-처리-및-타이밍)
-   - Render 동작의 예외
+   - [Render 동작의 예외](#render-동작의-예외)
  - 렌더링 성능 향상시키기
    - 컴포넌트 Render 최적화 기법
    - 새로운 props 참조가 Render 최적화에 끼치는 영향
@@ -75,7 +75,7 @@ return React.createElement(SomeComponent, {a: 42, b: "testing"}, "Text here")
 > **_NOTE:_**  React 팀은 최근 몇 년간 "가상 DOM"이라는 표현을 경시했습니다. _[Dan Abramov(Redux 개발자)의 트윗](https://twitter.com/dan_abramov/status/1066328666341294080?lang=en)_
 >
 > 저는 "가상 DOM"이라는 용어를 버리길 바랍니다. 2013년에는 말이 되는 용어였습니다. 이걸 쓰지 않으면 사람들은 React가 모든 render마다 DOM노드를 만들 것이라고 믿었기 때문이죠. 그런데 요즘 사람들은 이렇게 생각하지 않습니다. "가상 DOM"은  DOM문제의 해결책으로 들릴 수 있겠지만, React는 그렇지 않습니다.
-> React는 "value UI(의역: 값으로 UI를 만드는 방식)"입니다. 핵심 원리는, **UI는 그저 문자열이나 배열로 이루어진 값**이라는 점입니다. **값**이기에, 변수에 저장하고, 전달하고, JS의 제어 흐름을 따라갈 수 있습니다. 이 표현이 정말 중요한 요점입니다. 약간의 DOM 변경을 피하기 위해 비교하는 과정이 아닙니다. 
+> React는 "value UI *(의역: 값으로 UI를 만드는 방식)*"입니다. 핵심 원리는, **UI는 그저 문자열이나 배열로 이루어진 값**이라는 점입니다. **값**이기에, 변수에 저장하고, 전달하고, JS의 제어 흐름을 따라갈 수 있습니다. 이 표현이 정말 중요한 요점입니다. 약간의 DOM 변경을 피하기 위해 비교하는 과정이 아닙니다. 
 > React는 언제나 DOM을 표현하는 것이 아닙니다. 예를 들면, `<Message recipientId={10} />` 은 DOM이 아닙니다. 개념적으로, `Message.bind(null, {recipientId: 10})` 이라는 function을 추후에 호출할 뿐입니다.
 
 
@@ -90,7 +90,7 @@ React는 짧은 제한시간을 정하고, 이 시간이 지나면, 모든 `useE
 
 이 class 라이프사이클의 시각화를 [훌륭한 React lifecycle method diagram](https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/)에서 확인할 수 있습니다. (아직 effect hook을 보여주진 않지만, 추가되면 좋겠네요)
 
-> 곧 [출시될 Concurrent Mode](https://17.reactjs.org/docs/concurrent-mode-intro.html) (역자: React 18버전에 추가되었죠! 아직 공식 문서엔 구 문서만 남아있고, 업데이트가 안되었습니다.) 에서는, 렌더링 페이즈 중 일시 정지할 수 있습니다! 브라우저가 이벤트를 처리할 수 있도록 말이죠. 그 후  React는 추후 적절하게 작업을 재개하거나, 버리거나, 다시 계산할 수 있습니다. 만약 render 과정이 완료되어 넘어가면, React는 여전히 한번에 동기적으로 commit phase를 실행합니다. 
+> 곧 [출시될 Concurrent Mode](https://17.reactjs.org/docs/concurrent-mode-intro.html) *(역자: React 18버전에 추가되었죠! 아직 공식 문서엔 구 문서만 남아있고, 업데이트가 안되었습니다.)* 에서는, 렌더링 페이즈 중 일시 정지할 수 있습니다! 브라우저가 이벤트를 처리할 수 있도록 말이죠. 그 후  React는 추후 적절하게 작업을 재개하거나, 버리거나, 다시 계산할 수 있습니다. 만약 render 과정이 완료되어 넘어가면, React는 여전히 한번에 동기적으로 commit phase를 실행합니다. 
 
 가장 중요한 한 가지를 이해하고 갑시다. **"렌더링"은 "DOM을 업데이트하는 것"과 동일하지 않고, 컴포넌트는 결과적으로 눈에 보이는 어떠한 변화가 발생하지 않고도 렌더링 될 수 있습니다.**
 React가 컴포넌트를 렌더링 할 때:
@@ -205,7 +205,7 @@ function ParentComponent() {
 
 
 ## Key와 재조정
-React가 컴포넌트의 "인스턴스를" `key`라는 pseudo-prop(역: 가상의 prop)을 통해서도 식별합니다. `key`는 React의 지침이며, 실제 컴포넌트에겐 절대 전달되지 않습니다. React는 `key`를 컴포넌트 타입의 특정한 인스턴스를 구별지을때 사용하는 유일한 식별자로 간주합니다. 
+React가 컴포넌트의 "인스턴스를" `key`라는 pseudo-prop *(역: 가상의 prop)*을 통해서도 식별합니다. `key`는 React의 지침이며, 실제 컴포넌트에겐 절대 전달되지 않습니다. React는 `key`를 컴포넌트 타입의 특정한 인스턴스를 구별지을때 사용하는 유일한 식별자로 간주합니다. 
 
 `key`는 주로 리스트를 렌더링할때 사용합니다. `key`는 렌더링하는 과정에서 리스트에 데이터 추가, 제거, 수정하는 등 바뀔 수 있을 때 특히나 중요합니다.  **key는 가능한 모든 데이터 중 유일한 ID여야 한다는 점**은 특히나 중요합니다. **배열의 인덱스는 정말 최후의 수단으로 사용해야 합니다.**
 
@@ -218,9 +218,9 @@ Key는 list 말고도 컴포넌트 인스턴스 id에 유용합니다. **여러�
 ## Render 일괄 처리 및 타이밍
 기본적으로, 각각의 `setState()`호출은 React가 새로운 render를 진행하게 만들고, 동기적으로 실행하며, 반환하게 합니다. 그런데, React는 자동적으로 렌더링 일괄 처리의 방식으로 일종의 최적화도 자동으로 적용시킵니다. 렌더링 일괄 처리는 여러 가지의 `setState()`호출이 들어왔을 때 결과적으로 조금의 딜레이만으로 단 하나의 렌더링만 대기열에 담아 실행되도록 만들어줍니다. 
 
-React 문서에선 ["state의 업데이트는 비동기적일 수 있다"](https://reactjs.org/docs/state-and-lifecycle.html#state-updates-may-be-asynchronous)라고 언급합니다. 이 말은 앞으로 설명할 렌더링 일괄처리 동작과 연관되어있습니다.  부분적으로, React는 React의 이벤트 핸들러로에서 발생하는 state 업데이트를 알아서 일괄 처리합니다. React 이벤트 핸들러는 전형적인 React 앱 코드상의 매우 큰 부분을 차지하기 때문에 , 대부분의 state 변경은 실제로 일괄 처리됩니다.
+React 문서에선 ["state의 업데이트는 비동기적일 수 있다"](https://reactjs.org/docs/state-and-lifecycle.html#state-updates-may-be-asynchronous)라고 언급합니다. 이 말은 앞으로 설명할 렌더링 일괄 처리 동작과 연관되어있습니다.  부분적으로, React는 React의 이벤트 핸들러로에서 발생하는 state 업데이트를 알아서 일괄 처리합니다. React 이벤트 핸들러는 전형적인 React 앱 코드상의 매우 큰 부분을 차지하기 때문에 , 대부분의 state 변경은 실제로 일괄 처리됩니다.
 
-React는 이벤트 핸들러를 위한 렌더링 일괄처리를 `unstable_batchedUpdates`라고 알려진 내부 함수로 감싸서 구현합니다. React는 대기열에 담긴 모든 state 업데이트를 `unstable_batchedUpdates`가 실행되는 동안 추적하며, 후에 단일 render 과정으로 모든 변화 사항을 적용시킵니다. 이벤트 핸들러의 경우, React가 주어진 이벤트에 대해 어떤 핸들러를 호출해야 할 지 이미 정확히 알고있기 때문에 잘 작동합니다.
+React는 이벤트 핸들러를 위한 렌더링 일괄 처리를 `unstable_batchedUpdates`라고 알려진 내부 함수로 감싸서 구현합니다. React는 대기열에 담긴 모든 state 업데이트를 `unstable_batchedUpdates`가 실행되는 동안 추적하며, 후에 단일 render 과정으로 모든 변화 사항을 적용시킵니다. 이벤트 핸들러의 경우, React가 주어진 이벤트에 대해 어떤 핸들러를 호출해야 할 지 이미 정확히 알고있기 때문에 잘 작동합니다.
 
 개념적으로, React가 내부적으로 하는 작업을 이러한 의사 코드로 상상할 수 있습니다:
 ```js
@@ -278,4 +278,14 @@ commit phase 내부의 라이프사이클엔 `componentDidMount`, `componentDidU
  - 하지만, React 팀은 "이는 'unstable' API중 가장 안정적인 API이며, Facebook 코드의 절반은 이 함수에 의존합니다" 라고 말했습니다.
  - `react`에 배포된 나머지 핵심 API들과 달리, `unstable_batchedUpdates`는  `react` 패키지의 항목이 아닌, reconciler-specific(재조정-명세) API입니다. 대신, `react-dom`과 `react-native`에는 배포되어 있습니다. 이는 `react-three-fiber`나 `ink`같은 다른 재조정 관련 도구들도 `unstable_batchedUpdates` 함수를 export하지 않을 것이라는 점을 의미합니다.
 
-React-Redux 7버전에서는, [`unstable_batchedUpdates`를 내부적으로 사용하기 시작했습니다.] (https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/#use-of-react-s-batched-updates-api)
+React-Redux 7버전에서는, [`unstable_batchedUpdates`를 내부적으로 사용하기 시작했습니다.] (https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/#use-of-react-s-batched-updates-api) 그렇지만 React DOM과 React Native에 둘 다 적용하는 것은 조금 까다로운 세팅이 필요했습니다.(이용 가능한 패키지의 따라 효과적으로 부분만 가져오는 방식)
+
+곧 나올 React의 Concurrent Mode에선, React는 *항상, 언제나, 어디서든지* 업데이트를 일괄 처리합니다.
+
+## Render 동작의 예외
+
+React는 **개발 중에 사용하는 `<React.StrictMode>` 태그의 내부에서 컴포넌트를 두 번 렌더링 할 것입니다.** 이는 당신이 렌더링 로직을 실행하는 횟수가 커밋되는 렌더 과정의 횟수와 같지 *않으며*, 렌더링 횟수를 계산하기 위해 `console.log()`에 의존할 수 없다는 것을 의미합니다. *(역 추가: [React 17부터 React는 자동으로 `console.log()` 같은 콘솔 메서드를 수정해서 생명주기 함수의 두 번째 호출에서 로그를 찍지 않습니다.](https://ko.reactjs.org/docs/strict-mode.html#detecting-unexpected-side-effects))* 대신, React DevTools Profiler를 사용해 전체적인 커밋된 렌더 횟수를 추적하거나, `useEffect` hook이나 `componentDidMount/Update` 라이프사이클에 로깅을 추가할 수 있습니다. 로그는 React가 완전히 렌더 과정을 완료하고 커밋되었을 때만 출력될 것입니다. *(역: 복습하건데, useEffect는 Commit Phase가 끝난 뒤 Passive Effect에 동작하기 때문이죠.)*
+
+정상적인 상황이라면, 여러분은 실제 렌더링 로직에서 *절대* 상태 업데이트를 대기열에 담아선 안됩니다. 다른 말로, `setSomeState()`를 호출하는 click callback을 생성하는 것은 괜찮습니만 click이 발생하면, `setSomeState`를 실제 렌더링 동작의 부분으로 호출해선 안됩니다.
+
+하지만, 여기엔 한 가지 예외가 있습니다. **Function 컴포넌트는 렌더링하는 동안 `setSomeState`를 직접적으로 호출할 수 있지만,** 조건부로 수행되고, 해당 컴포넌트가 렌더링 될 때마다 실행되지 않습니다.

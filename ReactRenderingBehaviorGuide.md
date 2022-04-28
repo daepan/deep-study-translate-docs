@@ -1,4 +1,3 @@
-
 # React 렌더링 동작에 관한 (거의) 완벽한 가이드
 
  이 글은 Marks's Dev Blog의 [Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/#standard-render-behavior)를 번역한 글입니다.
@@ -28,7 +27,7 @@ ___
    - [Key와 재조정](#key와-재조정)
    - [Render 일괄 처리 및 타이밍](#render-일괄-처리-및-타이밍)
    - [Render 동작의 예외](#render-동작의-예외)
- - 렌더링 성능 향상시키기
+ - [렌더링 성능 향상시키기](#렌더링-성능-향상시키기)
    - 컴포넌트 Render 최적화 기법
    - 새로운 props 참조가 Render 최적화에 끼치는 영향
    - Props 참조 최정화하기
@@ -286,6 +285,12 @@ React-Redux 7버전에서는, [`unstable_batchedUpdates`를 내부적으로 사�
 
 React는 **개발 중에 사용하는 `<React.StrictMode>` 태그의 내부에서 컴포넌트를 두 번 렌더링 할 것입니다.** 이는 당신이 렌더링 로직을 실행하는 횟수가 커밋되는 렌더 과정의 횟수와 같지 *않으며*, 렌더링 횟수를 계산하기 위해 `console.log()`에 의존할 수 없다는 것을 의미합니다. *(역 추가: [React 17부터 React는 자동으로 `console.log()` 같은 콘솔 메서드를 수정해서 생명주기 함수의 두 번째 호출에서 로그를 찍지 않습니다.](https://ko.reactjs.org/docs/strict-mode.html#detecting-unexpected-side-effects))* 대신, React DevTools Profiler를 사용해 전체적인 커밋된 렌더 횟수를 추적하거나, `useEffect` hook이나 `componentDidMount/Update` 라이프사이클에 로깅을 추가할 수 있습니다. 로그는 React가 완전히 렌더 과정을 완료하고 커밋되었을 때만 출력될 것입니다. *(역: 복습하건데, useEffect는 Commit Phase가 끝난 뒤 Passive Effect에 동작하기 때문이죠.)*
 
-정상적인 상황이라면, 여러분은 실제 렌더링 로직에서 *절대* 상태 업데이트를 대기열에 담아선 안됩니다. 다른 말로, `setSomeState()`를 호출하는 click callback을 생성하는 것은 괜찮습니만 click이 발생하면, `setSomeState`를 실제 렌더링 동작의 부분으로 호출해선 안됩니다.
+일반적으로, 실제 렌더링 로직에서 *절대* 상태 업데이트를 대기열에 담아선 안됩니다. 다른 말로, click이 발생할 때 `setSomeState()`를 호출하는 click callback을 만드는 것은 괜찮습니다만,`setSomeState()`를 실제 렌더링 동작의 한 파트로 호출해선 안됩니다.
 
-하지만, 여기엔 한 가지 예외가 있습니다. **Function 컴포넌트는 렌더링하는 동안 `setSomeState`를 직접적으로 호출할 수 있지만,** 조건부로 수행되고, 해당 컴포넌트가 렌더링 될 때마다 실행되지 않습니다.
+하지만, 여기엔 한 가지 예외가 있습니다. **Function 컴포넌트는 렌더링 도중에 `setSomeState()`를 직접적으로 호출할 수 있으며**, 해당 컴포넌트가 렌더링 될 때마다 실행하지 않습니다. 이는 [함수 컴포넌트가 클래스 컴포넌트의 `getDerivedStateFromProps`와 동일한 것](https://reactjs.org/docs/hooks-faq.html#how-do-i-implement-getderivedstatefromprops)처럼 동작합니다. 만약 함수 컴포넌트가 state 업데이트를 렌더링 중 대기열에 담았다면, React는 즉시 해당 state 업데이트를 적용하고, 계속 진행하기 전에 동기적으로 해당 컴포넌트를 재렌더링 합니다. 만약 컴포넌트가 state 업데이트를 무한히 대기열에 유지하고, 재렌더링하도록 강제된다면, React는 몇 번(지금은 50번)의 재도전을 한 후, 루프를 중단하고 에러를 발생시킵니다. 이 기술은 재렌더링 요청 없이 props 변경에 따라 state 값을 즉시 강제로 업데이트 할 때, +`useEffect` 내에서 `setSomeState()`를 호출할 때 사용됩니다. 
+
+# 렌더링 성능 향상시키기
+
+렌더링은 React의 작동 방법에서 일반적으로 예상되는 부분이지만, 때때로 "낭비"될 수 있다는 것도 사실입니다. 만약 컴포넌트의 렌더링 결과값(output)이 변하지 않는다면, 해당 부분의 DOM 또한 바뀔 필요가 없으므로, 해당 컴포넌트를 렌더링 하는 것 자체가 일종의 시간낭비입니다.
+
+React 컴포넌트의 렌더링 결과물은 언제나 완전히 현재 props와 state를 기반으로*해야 합니다.* 그러므로, 만약 우리가 컴포넌트의 props와 state가 변경되지 않는다는 것을 미리 알고 있다면, 컴포넌트의 render 결과물 도 같을 것이고, 결국 컴포넌트의 변화도 필요 없기 때문에 결국 안전하게 렌더링 과정을 건너뛸 수 있을 겁니다.

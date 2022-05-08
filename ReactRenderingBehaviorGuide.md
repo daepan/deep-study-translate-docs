@@ -28,7 +28,7 @@ ___
    - [Render 일괄 처리 및 타이밍](#render-일괄-처리-및-타이밍)
    - [Render 동작의 예외](#render-동작의-예외)
  - [렌더링 성능 향상시키기](#렌더링-성능-향상시키기)
-   - 컴포넌트 Render 최적화 기법
+   - [컴포넌트 Render 최적화 기법](#컴포넌트-render-최적화-기법)
    - 새로운 props 참조가 Render 최적화에 끼치는 영향
    - Props 참조 최정화하기
    - 모든 것을 메모이제이션하고 계신가요?
@@ -294,3 +294,14 @@ React는 **개발 중에 사용하는 `<React.StrictMode>` 태그의 내부에�
 렌더링은 React의 작동 방법에서 일반적으로 예상되는 부분이지만, 때때로 "낭비"될 수 있다는 것도 사실입니다. 만약 컴포넌트의 렌더링 결과값(output)이 변하지 않는다면, 해당 부분의 DOM 또한 바뀔 필요가 없으므로, 해당 컴포넌트를 렌더링 하는 것 자체가 일종의 시간낭비입니다.
 
 React 컴포넌트의 렌더링 결과물은 언제나 완전히 현재 props와 state를 기반으로*해야 합니다.* 그러므로, 만약 우리가 컴포넌트의 props와 state가 변경되지 않는다는 것을 미리 알고 있다면, 컴포넌트의 render 결과물 도 같을 것이고, 결국 컴포넌트의 변화도 필요 없기 때문에 결국 안전하게 렌더링 과정을 건너뛸 수 있을 겁니다.
+
+일반적으로 소프트웨어의 성능을 향상시키려 할 때, 기본적으로 두가지 접근 방식이 있습니다.
+ 1. 같은 작업을 빠르게 하거나
+ 2. 작업을 덜 하거나
+React 렌더링을 최적화하는 것은 주로 **2번**에 해당됩니다. 적절할 때, 컴포넌트의 렌더링을 건너뜀으로써 작업량을 줄이는 것이죠.
+
+## 컴포넌트 Render 최적화 기법
+React는 잠재적으로 컴포넌트의 렌더링을 건너뛸 수 있도록 세 가지 주요 API를 제공합니다.
+ - [`React.Component.shouldComponentUpdate`](https://reactjs.org/docs/react-component.html#shouldcomponentupdate): 렌더링 과정 초기에 호출되는 선택적인 class component lifecycle method입니다. 만약 `false`를 반환하면, React는 해당 컴포넌트의 렌더링을 건너뜁니다. 아마 이 방식은 boolean 결과값을 계산하는 로직이 포함될 수 있지만, 그런 접근보다는 대부분 지난번 렌더링과 비교했을 때 props나 state의 변화가 있었는지 확인하고 변화가 없다면 `false`를 반환합니다.
+ - [`React.PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent): props와 state의 비교가 가장 흔한 `shouldComponentUpdate`의 구현 방식이기에, `PureComponent` 클래스는 기본적으로 앞 방식을 구현하고, `Component` + `shouldComponentUpdate` 대신 사용될 수 있습니다.
+ - [`React.memo`](https://reactjs.org/docs/react-api.html#reactmemo): 내장된 ["고차 컴포넌트"](https://ko.reactjs.org/docs/higher-order-components.html#gatsby-focus-wrapper) 타입입니다. 

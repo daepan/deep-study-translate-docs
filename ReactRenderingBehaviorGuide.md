@@ -303,5 +303,7 @@ React 렌더링을 최적화하는 것은 주로 **2번**에 해당됩니다. �
 ## 컴포넌트 Render 최적화 기법
 React는 잠재적으로 컴포넌트의 렌더링을 건너뛸 수 있도록 세 가지 주요 API를 제공합니다.
  - [`React.Component.shouldComponentUpdate`](https://reactjs.org/docs/react-component.html#shouldcomponentupdate): 렌더링 과정 초기에 호출되는 선택적인 class component lifecycle method입니다. 만약 `false`를 반환하면, React는 해당 컴포넌트의 렌더링을 건너뜁니다. 아마 이 방식은 boolean 결과값을 계산하는 로직이 포함될 수 있지만, 그런 접근보다는 대부분 지난번 렌더링과 비교했을 때 props나 state의 변화가 있었는지 확인하고 변화가 없다면 `false`를 반환합니다.
- - [`React.PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent): props와 state의 비교가 가장 흔한 `shouldComponentUpdate`의 구현 방식이기에, `PureComponent` 클래스는 기본적으로 앞 방식을 구현하고, `Component` + `shouldComponentUpdate` 대신 사용될 수 있습니다.
- - [`React.memo`](https://reactjs.org/docs/react-api.html#reactmemo): 내장된 ["고차 컴포넌트"](https://ko.reactjs.org/docs/higher-order-components.html#gatsby-focus-wrapper) 타입입니다. 
+ - [`React.PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent): props와 state의 비교가 가장 흔한 `shouldComponentUpdate`의 구현 방식이기에, `PureComponent` 클래스는 기본적으로 앞 방식(props와 state의 비교)을 구현하고, `Component` + `shouldComponentUpdate` 대신 사용될 수 있습니다.
+ - [`React.memo`](https://reactjs.org/docs/react-api.html#reactmemo): 내장된 ["고차 컴포넌트(High Order Component)"](https://ko.reactjs.org/docs/higher-order-components.html#gatsby-focus-wrapper) 타입입니다. 해당 컴포넌트를 인자로 삼아, 새로운 Wrapper 컴포넌트를 반환합니다. Wrapper 컴포넌트의 기본적인 동작은 props가 하나라도 바뀌었거나, 바뀌지 않은지 확인해서 재렌더링을 방지하는 것입니다. 함수형 컴포넌트와 클래스형 컴포넌트 둘 다 `React.memo()`를 사용해 감싸질 수 있습니다. (`React.memo()`는 두 번째 인자로 커스텀 비교 콜백을 담아 비교할 수 있습니다만, 이는 이전 props와 새로운 props만 비교할 수 있으므로, 이를 사용하는 주된 방법은 모든 props에 대해서 비교하는 것이 아닌, 특정 필드만 비교하는 것입니다.)
+
+이러한 비교 기술을 이용한 모든 접근은 **"shallow equality(얕은 동등성)"** 이라고 불립니다. 이는 두개의 다른 객체의 모든 각각의 필드를 검사하고, 서로 다른 값을 가진 내용물이 있는지 확인하는 것을 의미합니다. 간단하게, `obj1.a === obj2.a && obj1.b === obj2.b && ..........` 이런 과정입니다. JS엔진은 `===`연산을 아주 간단하게 비교하기 때문에, 일반적으로 빠른 과정입니다. 

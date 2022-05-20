@@ -29,8 +29,8 @@ ___
    - [Render 동작의 예외](#render-동작의-예외)
  - [렌더링 성능 향상시키기](#렌더링-성능-향상시키기)
    - [컴포넌트 Render 최적화 기법](#컴포넌트-render-최적화-기법)
-   - 새로운 props 참조가 Render 최적화에 끼치는 영향
-   - Props 참조 최정화하기
+   - 새로운 props 레퍼런스가 Render 최적화에 끼치는 영향
+   - Props 레퍼런스 최적화하기
    - 모든 것을 메모이제이션하고 계신가요?
    - 불변성과 렌더링
    - React 컴포넌트 렌더링 성능 측정하기
@@ -166,7 +166,7 @@ React는 애플리케이션에 존재하는 모든 현재 컴포넌트 인스턴
 렌더링 과정동안, React는 새로운 렌더링 결과를 계산할 때, 트리의 Fiber 객체를 반복해서확인함으로써 업데이트된 트리를 구성합니다.
 
 **"Fiber" 객체들은 *실제* 컴포넌트의 props와 state값을 저장합니다.**
-여러분이 컴포넌트의 props와 state를 사용하면, React는 실제로 Fiber 객체에 저장되어진 값에 접근시킵니다. 특히 class 컴포넌트에선, [React는 명시적으로 컴포넌트를 렌더링하기 직전에 `componentInstance.props = newProps`를 복사합니다.](https://github.com/facebook/react/blob/v17.0.0/packages/react-reconciler/src/ReactFiberClassComponent.new.js#L1038-L1042) 그렇기에`this.props`는 존재하나, 오직 React가 Fiber 객체의 내부에서 참조를 복사했기에 존재합니다. 그런 의미에서 컴포넌트는 Fiber 객체의 일종의 외관일 뿐입니다.
+여러분이 컴포넌트의 props와 state를 사용하면, React는 실제로 Fiber 객체에 저장되어진 값에 접근시킵니다. 특히 class 컴포넌트에선, [React는 명시적으로 컴포넌트를 렌더링하기 직전에 `componentInstance.props = newProps`를 복사합니다.](https://github.com/facebook/react/blob/v17.0.0/packages/react-reconciler/src/ReactFiberClassComponent.new.js#L1038-L1042) 그렇기에`this.props`는 존재하나, 오직 React가 Fiber 객체의 내부에서 레퍼런스를 복사했기에 존재합니다. 그런 의미에서 컴포넌트는 Fiber 객체의 일종의 외관일 뿐입니다.
 
 비슷하게, function 컴포넌트에서 hook은 [React가 연결된 모든 hook을 연결 리스트로 만들어, 컴포넌트의 Fiber 객체에 저장하기 때문에](https://www.swyx.io/hooks/) 작동할 수 있습니다. React가 function 컴포넌트를 렌더링하면, Fiber 객체로부터 연결된 hook 관련 리스트를 가져오고, hook을 호출할 때마다, [해당 hook 객체에 저장되어있는 적절한 값(state나 useReducer의 dispatch 같은)을 반환합니다.](https://github.com/facebook/react/blob/v17.0.0/packages/react-reconciler/src/ReactFiberHooks.new.js#L795)
 
@@ -178,9 +178,9 @@ React는 애플리케이션에 존재하는 모든 현재 컴포넌트 인스턴
 
 그래서, React는 언제, 그리고 어떻게 render 출력 결과가 변경되었음을 알아차릴까요?
 
-React의 렌더링 로직은 요소의 `===`참조 비교를 통해 `type`필드를 먼저 비교합니다. 만약 요소가 `<div>`에서 `<span>`이나, `<ComponentA>` 에서  `<ComponentB>`로 변한 것과 같이 새로운 타입으로 변경되었다면,  React는 모든 트리가 변경된다고 추정해, 비교 과정의 속도를 올립니다. 결과적으로, **React는 존재하는 모든 DOM 노드를 포함해, 컴포넌트 트리를 전부 지웁니다.** 그리고 컴포넌트 인스턴스를 처음부터 새로 만들어냅니다. 
+React의 렌더링 로직은 요소의 `===` 레퍼런스 비교를 통해 `type`필드를 먼저 비교합니다. 만약 요소가 `<div>`에서 `<span>`이나, `<ComponentA>` 에서  `<ComponentB>`로 변한 것과 같이 새로운 타입으로 변경되었다면,  React는 모든 트리가 변경된다고 추정해, 비교 과정의 속도를 올립니다. 결과적으로, **React는 존재하는 모든 DOM 노드를 포함해, 컴포넌트 트리를 전부 지웁니다.** 그리고 컴포넌트 인스턴스를 처음부터 새로 만들어냅니다. 
 
-이는 **렌더링중에 새로운 타입의 컴포넌트를 절대 만들면 안된다**는 뜻입니다. 새로운 컴포넌트 타입을 생성할 때마다, 새로운 참조이므로, React는 반복적으로 하위 컴포넌트들을 없애고 다시 만들겁니다.
+이는 **렌더링중에 새로운 타입의 컴포넌트를 절대 만들면 안된다**는 뜻입니다. 새로운 컴포넌트 타입을 생성할 때마다, 새로운 레퍼런스이므로, React는 반복적으로 하위 컴포넌트들을 없애고 다시 만들겁니다.
 
 다르게 말해서 이러면 **안됩니다**:
 ```js
@@ -306,4 +306,43 @@ React는 잠재적으로 컴포넌트의 렌더링을 건너뛸 수 있도록 �
  - [`React.PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent): props와 state의 비교가 가장 흔한 `shouldComponentUpdate`의 구현 방식이기에, `PureComponent` 클래스는 기본적으로 앞 방식(props와 state의 비교)을 구현하고, `Component` + `shouldComponentUpdate` 대신 사용될 수 있습니다.
  - [`React.memo`](https://reactjs.org/docs/react-api.html#reactmemo): 내장된 ["고차 컴포넌트(High Order Component)"](https://ko.reactjs.org/docs/higher-order-components.html#gatsby-focus-wrapper) 타입입니다. 해당 컴포넌트를 인자로 삼아, 새로운 Wrapper 컴포넌트를 반환합니다. Wrapper 컴포넌트의 기본적인 동작은 props가 하나라도 바뀌었거나, 바뀌지 않은지 확인해서 재렌더링을 방지하는 것입니다. 함수형 컴포넌트와 클래스형 컴포넌트 둘 다 `React.memo()`를 사용해 감싸질 수 있습니다. (`React.memo()`는 두 번째 인자로 커스텀 비교 콜백을 담아 비교할 수 있습니다만, 이는 이전 props와 새로운 props만 비교할 수 있으므로, 이를 사용하는 주된 방법은 모든 props에 대해서 비교하는 것이 아닌, 특정 필드만 비교하는 것입니다.)
 
-이러한 비교 기술을 이용한 모든 접근은 **"shallow equality(얕은 동등성)"** 이라고 불립니다. 이는 두개의 다른 객체의 모든 각각의 필드를 검사하고, 서로 다른 값을 가진 내용물이 있는지 확인하는 것을 의미합니다. 간단하게, `obj1.a === obj2.a && obj1.b === obj2.b && ..........` 이런 과정입니다. JS엔진은 `===`연산을 아주 간단하게 비교하기 때문에, 일반적으로 빠른 과정입니다. 
+이러한 비교 기술을 이용한 모든 접근은 **"shallow equality(얕은 동등성)"** 이라고 불립니다. 이는 두개의 다른 객체의 모든 필드를 각각 검사하고, 서로 다른 값을 가진 내용물이 있는지 확인하는 것입니다. 대충 `obj1.a === obj2.a && obj1.b === obj2.b && ..........` 이런 과정입니다. JS엔진은 `===`연산을 아주 간단하게 비교하기 때문에, 일반적으로 빠릅니다. 그렇기에, 이러한 세가지 접근법은 `const shouldrender = !shallowEqual(newProps, prevProps)` 처럼 동작합니다.
+
+여기엔 또한 덜 알려진 기술이 있는데, **만약 React 컴포넌트가 마지막으로 반환했던 것과 똑같은 요소의 레퍼런스를 렌더링 결과로 반환한다면, react는 특정 하위 요소들의 재렌더링을 생략합니다.** 이 기술은 두가지 구현 방식이 있습니다:
+ - 만약 `props.children`을 출력에 포함한다면, 해당 요소는 컴포넌트의 state를 업데이트해도 동일합니다.
+ - 만약 `useMemo()`로 몇몇 요소를 감쌌다면, 의존성이 변경될 때 까지 동일합니다.
+예시:
+```jsx
+// `props.children` 요소는 state가 바뀌어도 재렌더링이 발생하지 않습니다.
+function SomeProvider({children}) {
+  const [counter, setCounter] = useState(0);
+
+  return (
+    <div>
+      <button onClick={() => setCounter(counter + 1)}>Count: {counter}</button>
+      <OtherChildComponent /> 
+      {children}
+    </div>
+  )
+}
+
+function OptimizedParent() {
+  const [counter1, setCounter1] = useState(0);
+  const [counter2, setCounter2] = useState(0);
+
+  const memoizedElement = useMemo(() => {
+    // 이 요소는 counter2가 업데이트되어도 동일한 레퍼런스를 유지합니다.
+    // 그렇기에 이 비용이 큰 컴포넌트는 counter1이 변하지 않는 이상 재렌더링되지 않습니다.
+    return <ExpensiveChildComponent />
+  }, [counter1]) ;
+
+  return (
+    <div>
+      <button onClick={() => setCounter1(counter1 + 1)}>Counter 1: {counter1}</button>      
+      <button onClick={() => setCounter1(counter2 + 1)}>Counter 2: {counter2}</button>
+      {memoizedElement}
+    </div>
+  )
+}
+```
+이러한 기술들 덕에, 컴포넌트의 렌더링을 생략하는 것은 React가 모든 하위 트리의 렌더링도 생략하는 것을 의미합니다. "자식 요소들을 재귀적으로 렌더링하는" 기본적인 동작을 멈추기 위한 정지 신호를 효과적으로 설정하기 때문이죠.

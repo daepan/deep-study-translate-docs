@@ -6,7 +6,7 @@
 
 ___
 
- React가 컴포넌트를 언제, 왜 재렌더링 하게 되는 것인지, Context와 React-Redux의 사용이 재랜더링의 타이밍과 범위에 어떻게 영향을 끼치는지 이해하는 건 참 복잡합니다.
+ React가 컴포넌트를 언제, 왜 재렌더링 하게 되는 것인지, Context와 React-Redux의 사용이 재렌더링의 타이밍과 범위에 어떻게 영향을 끼치는지 이해하는 건 참 복잡합니다.
  
  이 글을 수십번 고쳐써서, 이제야 사람들에게 추천할 만 하다 싶은 통합 가이드라인이 되었습니다.
 
@@ -29,7 +29,7 @@ ___
    - [Render 동작의 예외](#render-동작의-예외)
  - [렌더링 성능 향상시키기](#렌더링-성능-향상시키기)
    - [컴포넌트 Render 최적화 기법](#컴포넌트-render-최적화-기법)
-   - 새로운 props 레퍼런스가 Render 최적화에 끼치는 영향
+   - [새로운 props 레퍼런스가 Render 최적화에 끼치는 영향](#새로운-props-레퍼런스가-render-최적화에-끼치는-영향)
    - Props 레퍼런스 최적화하기
    - 모든 것을 메모이제이션하고 계신가요?
    - 불변성과 렌더링
@@ -346,3 +346,36 @@ function OptimizedParent() {
 }
 ```
 이러한 기술들 덕에, 컴포넌트의 렌더링을 생략하는 것은 React가 모든 하위 트리의 렌더링도 생략하는 것을 의미합니다. "자식 요소들을 재귀적으로 렌더링하는" 기본적인 동작을 멈추기 위한 정지 신호를 효과적으로 설정하기 때문이죠.
+
+## 새로운 props 레퍼런스가 Render 최적화에 끼치는 영향
+**React는 기본적으로 중첩된 모든 컴포넌트를, props가 변하지 않았더라도 재렌더링한다는 것**을 확인했습니다. 그리고 새로운 **레퍼런스**가 props로 자식 컴포넌트에게 들어가는 것은 문제가 되지 않았습니다. 같은 props를 전달했는지의 여부에 따라 렌더링하기 때문이죠. 아래와 같은 코드는 전혀 문제가 없습니다:
+```jsx
+function ParentComponent() {
+    const onClick = () => {
+      console.log("Button clicked")
+    }
+    
+    const data = {a: 1, b: 2}
+    
+    return <NormalChildComponent onClick={onClick} data={data} />
+}
+```
+`ParentComponent`가 렌더링 될 때마다, 새로운 `onClick`함수 레퍼런스와 `data`객체 레퍼런스가 만들어져서, `NormalChildComponent`의 props로 들어갑니다. (`onClick`함수를 정의할 때 `function`키워드를 사용할지, 화살표 함수를 사용할지는 중요하지 않습니다 - 어느 쪽이던 새로운 함수 레퍼런스가 생깁니다.)]
+
+그리고 하위 요소가 없는`div`나 `button`같은 단일 컴포넌트를 `React.memo()`로 감싸서 최적화하는건 의미가 없습니다. 컴포넌트의 하위 요소가 없기 때문에, 결국 렌더링 프로세스는 마지막까지 도달해 중지됩니다.
+
+그렇지만, **만약 자식 컴포넌트가 props가 변경되었는지를 확인해서 최적화를 하려고 한다면,  새로운 레퍼런스를 props로 담는 것이 자식 컴포넌트를 렌더링하게 합니다.** 새로운 prop의 레퍼런스가 실제로 새로운 데이터라면, 좋은 방법입니다. 그렇지만, 부모 컴포넌트가 콜백 함수를 전달해준다면 어떻게 될까요?
+```jsx
+const MemoizedChildComponent = React.memo(ChildComponent)
+
+function ParentComponent() {
+    const onClick = () => {
+      console.log("Button clicked")
+    }
+    
+    const data = {a: 1, b: 2}
+    
+    return <MemoizedChildComponent onClick={onClick} data={data} />
+}
+```
+이제, `ParentComponent`가 렌더링되면,

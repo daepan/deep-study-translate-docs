@@ -30,7 +30,7 @@ ___
  - [렌더링 성능 향상시키기](#렌더링-성능-향상시키기)
    - [컴포넌트 Render 최적화 기법](#컴포넌트-render-최적화-기법)
    - [새로운 props 레퍼런스가 Render 최적화에 끼치는 영향](#새로운-props-레퍼런스가-render-최적화에-끼치는-영향)
-   - Props 레퍼런스 최적화하기
+   - [Props 레퍼런스 최적화하기](#props-레퍼런스-최적화하기)
    - 모든 것을 메모이제이션하고 계신가요?
    - 불변성과 렌더링
    - React 컴포넌트 렌더링 성능 측정하기
@@ -304,13 +304,13 @@ React 렌더링을 최적화하는 것은 주로 **2번**에 해당됩니다. �
 React는 잠재적으로 컴포넌트의 렌더링을 건너뛸 수 있도록 세 가지 주요 API를 제공합니다.
  - [`React.Component.shouldComponentUpdate`](https://reactjs.org/docs/react-component.html#shouldcomponentupdate): 렌더링 과정 초기에 호출되는 선택적인 class component lifecycle method입니다. 만약 `false`를 반환하면, React는 해당 컴포넌트의 렌더링을 건너뜁니다. 아마 이 방식은 boolean 결과값을 계산하는 로직이 포함될 수 있지만, 그런 접근보다는 대부분 지난번 렌더링과 비교했을 때 props나 state의 변화가 있었는지 확인하고 변화가 없다면 `false`를 반환합니다.
  - [`React.PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent): props와 state의 비교가 가장 흔한 `shouldComponentUpdate`의 구현 방식이기에, `PureComponent` 클래스는 기본적으로 앞 방식(props와 state의 비교)을 구현하고, `Component` + `shouldComponentUpdate` 대신 사용될 수 있습니다.
- - [`React.memo`](https://reactjs.org/docs/react-api.html#reactmemo): 내장된 ["고차 컴포넌트(High Order Component)"](https://ko.reactjs.org/docs/higher-order-components.html#gatsby-focus-wrapper) 타입입니다. 해당 컴포넌트를 인자로 삼아, 새로운 Wrapper 컴포넌트를 반환합니다. Wrapper 컴포넌트의 기본적인 동작은 props가 하나라도 바뀌었거나, 바뀌지 않은지 확인해서 재렌더링을 방지하는 것입니다. 함수형 컴포넌트와 클래스형 컴포넌트 둘 다 `React.memo()`를 사용해 감싸질 수 있습니다. (`React.memo()`는 두 번째 인자로 커스텀 비교 콜백을 담아 비교할 수 있습니다만, 이는 이전 props와 새로운 props만 비교할 수 있으므로, 이를 사용하는 주된 방법은 모든 props에 대해서 비교하는 것이 아닌, 특정 필드만 비교하는 것입니다.)
+ - [`React.memo()`](https://reactjs.org/docs/react-api.html#reactmemo): 내장된 ["고차 컴포넌트(High Order Component)"](https://ko.reactjs.org/docs/higher-order-components.html#gatsby-focus-wrapper) 타입입니다. 해당 컴포넌트를 인자로 삼아, 새로운 Wrapper 컴포넌트를 반환합니다. Wrapper 컴포넌트의 기본적인 동작은 props가 하나라도 바뀌었거나, 바뀌지 않은지 확인해서 재렌더링을 방지하는 것입니다. 함수형 컴포넌트와 클래스형 컴포넌트 둘 다 `React.memo()`를 사용해 감싸질 수 있습니다. (`React.memo()`는 두 번째 인자로 커스텀 비교 콜백을 담아 비교할 수 있습니다만, 이는 이전 props와 새로운 props만 비교할 수 있으므로, 이를 사용하는 주된 방법은 모든 props에 대해서 비교하는 것이 아닌, 특정 필드만 비교하는 것입니다.)
 
-이러한 비교 기술을 이용한 모든 접근은 **"shallow equality(얕은 동등성)"** 이라고 불립니다. 이는 두개의 다른 객체의 모든 필드를 각각 검사하고, 서로 다른 값을 가진 내용물이 있는지 확인하는 것입니다. 대충 `obj1.a === obj2.a && obj1.b === obj2.b && ..........` 이런 과정입니다. JS엔진은 `===`연산을 아주 간단하게 비교하기 때문에, 일반적으로 빠릅니다. 그렇기에, 이러한 세가지 접근법은 `const shouldrender = !shallowEqual(newProps, prevProps)` 처럼 동작합니다.
+이러한 비교 기술을 이용한 모든 접근은 **"shallow equality(얕은 동등성)"** 이라고 불립니다. 이는 두개의 다른 객체의 모든 필드를 각각 검사하고, 서로 다른 값을 가진 내용물이 있는지 확인하는 방식입니다. 대충 `obj1.a === obj2.a && obj1.b === obj2.b && ..........` 이렇게 확인하는 과정입니다. JS엔진은 `===`연산을 아주 간단하게 비교하기 때문에, 일반적으로 빠릅니다. 그렇기에, 이러한 세가지 접근법은 `const shouldRender = !shallowEqual(newProps, prevProps)` 처럼 동작합니다.
 
-여기엔 또한 덜 알려진 기술이 있는데, **만약 React 컴포넌트가 마지막으로 반환했던 것과 똑같은 요소의 레퍼런스를 렌더링 결과로 반환한다면, react는 특정 하위 요소들의 재렌더링을 생략합니다.** 이 기술은 두가지 구현 방식이 있습니다:
- - 만약 `props.children`을 출력에 포함한다면, 해당 요소는 컴포넌트의 state를 업데이트해도 동일합니다.
- - 만약 `useMemo()`로 몇몇 요소를 감쌌다면, 의존성이 변경될 때 까지 동일합니다.
+여기엔 또한 덜 알려진 기술이 있는데, **만약 React 컴포넌트가 마지막으로 반환했던 것과 똑같은 요소의 레퍼런스를 렌더링 결과로 반환한다면, React는 특정 하위 요소들의 재렌더링을 생략합니다.** 이 기술은 두가지 구현 방식이 있습니다:
+ - 만약 `props.children`을 출력에 포함한다면, 해당 요소는 컴포넌트의 state를 업데이트해도 동일한 레퍼런스를 가집니다.
+ - 만약 `useMemo()`로 몇몇 요소를 감쌌다면, 의존성이 변경될 때 까지 동일한 레퍼런스를 가집니다.
 예시:
 ```jsx
 // `props.children` 요소는 state가 바뀌어도 재렌더링이 발생하지 않습니다.
@@ -348,7 +348,7 @@ function OptimizedParent() {
 이러한 기술들 덕에, 컴포넌트의 렌더링을 생략하는 것은 React가 모든 하위 트리의 렌더링도 생략하는 것을 의미합니다. "자식 요소들을 재귀적으로 렌더링하는" 기본적인 동작을 멈추기 위한 정지 신호를 효과적으로 설정하기 때문이죠.
 
 ## 새로운 props 레퍼런스가 Render 최적화에 끼치는 영향
-**React는 기본적으로 중첩된 모든 컴포넌트를, props가 변하지 않았더라도 재렌더링한다는 것**을 확인했습니다. 그리고 새로운 **레퍼런스**가 props로 자식 컴포넌트에게 들어가는 것은 문제가 되지 않았습니다. 같은 props를 전달했는지의 여부에 따라 렌더링하기 때문이죠. 아래와 같은 코드는 전혀 문제가 없습니다:
+**React는 기본적으로 중첩된 모든 컴포넌트를, 컴포넌트들의 props가 변하지 않았더라도 재렌더링한다는 것**을 확인했습니다. 이것은 도한 새로운 **레퍼런스**가 props로 자식 컴포넌트에게 들어가는 것은 문제가 되지 않는다는 것을 의미합니다. **같은 props 값을 전달했는지는 상관 없이 그냥 렌더링하기 때문입니다.** 아래와 같은 코드는 전혀 문제가 없는 코드입니다: 
 ```jsx
 function ParentComponent() {
     const onClick = () => {
@@ -360,7 +360,9 @@ function ParentComponent() {
     return <NormalChildComponent onClick={onClick} data={data} />
 }
 ```
-`ParentComponent`가 렌더링 될 때마다, 새로운 `onClick`함수 레퍼런스와 `data`객체 레퍼런스가 만들어져서, `NormalChildComponent`의 props로 들어갑니다. (`onClick`함수를 정의할 때 `function`키워드를 사용할지, 화살표 함수를 사용할지는 중요하지 않습니다 - 어느 쪽이던 새로운 함수 레퍼런스가 생깁니다.)]
+> 왜 문제가 없을까요? 최적화를 시도한 더욱 아래 코드와 비교하면 이해할 수 있습니다.
+
+`ParentComponent`가 렌더링 될 때마다, 새로운 `onClick`함수 레퍼런스와 `data`객체 레퍼런스가 만들어져서, `NormalChildComponent`의 props로 들어갑니다. (`onClick`함수를 정의할 때 `function`키워드를 사용할지, 화살표 함수를 사용할지는 중요하지 않습니다 - 어느 쪽이던 새로운 함수 레퍼런스가 생깁니다.)
 
 그리고 하위 요소가 없는`div`나 `button`같은 단일 컴포넌트를 `React.memo()`로 감싸서 최적화하는건 의미가 없습니다. 컴포넌트의 하위 요소가 없기 때문에, 결국 렌더링 프로세스는 마지막까지 도달해 중지됩니다.
 
@@ -378,4 +380,17 @@ function ParentComponent() {
     return <MemoizedChildComponent onClick={onClick} data={data} />
 }
 ```
-이제, `ParentComponent`가 렌더링되면,
+이제, `ParentComponent`가 렌더링되면, 새로운 레퍼런스들이 `MemoizedChildComponent`에게 들어가고, props 값이 새로운 레퍼런스로 변경된 것이 확인되어, 재렌더링이 발생하게 될 겁니다. `onClick` 함수와 `data`는 매 호출마다 *기본적으론* 동일함에도 불구하고 말이죠!
+
+그러므로:
+ - `MemoizedChildComponent`의 렌더링을 생략하고 싶었음에도, 언제나 재렌더링됩니다.
+ - 이전 props와 새로운 props를 비교하는 작업은 그저 낭비입니다.
+
+비슷하게, `<MemoizedChild> <OtherComponent/> </MemoizedChild>`처럼 렌더링하는 것 *또한* 자식 컴포넌트를 항상 렌더링하도록 만듭니다. `props.children`이 언제나 새로운 레퍼런스를 갖기 때문이죠.
+
+## Props 레퍼런스 최적화하기
+클래스 컴포넌트는 인스턴스의 메소드가 매번 같은 레퍼런스를 갖기 때문에, 의도치 않게 새로운 콜백함수 레퍼런스가 만들어지는 것에 대해 걱정할 필요가 적습니다. 그렇지만, 하위 리스트의 요소마다 특수한 콜백을 만들어줘야 할 때나, 익명 함수의 값을 저장하고 자식 요소에게 넘겨주어야 할 때가 있을겁니다. 그런 경우에는 새 참조가 생성되고, 자식 props로써 새로운 객체들이 렌더링 과정에 생성됩니다. React는 이러한 경우를 최적화하는 방법이 없습니다.
+
+
+함수형 컴포넌트는, React는 같은 레퍼런스를 재사용할 수 있도록 두 가지 hook을 제공합니다. `useMemo`는 
+ 

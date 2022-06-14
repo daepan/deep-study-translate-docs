@@ -1,16 +1,16 @@
 # React 렌더링 동작에 관한 (거의) 완벽한 가이드
 
- 이 글은 Marks's Dev Blog의 [Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/#standard-render-behavior)를 번역한 글입니다.
+ 이 글은 Marks's Dev Blog의 [Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior)를 번역한 글입니다.
  
-*(역자가 첫 번역인지라 미숙한 영어와 markdown실력을 겸비했으니, 수정사항은 언제나 환영입니다..ㅎ)*
+*(역자가 첫 번역인지라 미숙할 수 있음에 유의해주세요.)*
 
 ___
 
  React가 컴포넌트를 언제, 왜 재렌더링 하게 되는 것인지, Context와 React-Redux의 사용이 재렌더링의 타이밍과 범위에 어떻게 영향을 끼치는지 이해하는 건 참 복잡합니다.
  
- 이 글을 수십번 고쳐써서, 이제야 사람들에게 추천할 만 하다 싶은 통합 가이드라인이 되었습니다.
+ 이 글을 수십번 고쳐써서, 이제야 사람들에게 추천할만하다 싶은 통합 가이드라인이 되었습니다.
 
- 이 글의 모든 정보는 이미 온라인에서 찾을 수 있는 내용들이며, 수많은 훌륭한 블로그 글들이나 기사에서 찾아볼 수 있습니다. 그 중 몇몇은, 그런 글들의 마지막 "추가 정보" 란에 링크되어 있을겁니다. 그럼에도, 참 많은 사람들이 정보를 여기저기서 부분부분 모아 이해하려고 애씁니다. 
+ 이 글의 모든 정보는 이미 온라인에서 찾을 수 있는 내용들이며, 수많은 훌륭한 블로그 글들이나 기사에서 찾아볼 수 있습니다. 그 중 몇몇은, 그런 글들의 마지막 "추가 정보" 란에 링크되어 있을겁니다. 그럼에도, 참 많은 사람들이 여기저기서 부분부분 정보를 모아 이해하려고 애씁니다. 
 
 이 글이 누군가에겐, 명확한 이해를 도와주길 바랍니다.
 
@@ -34,7 +34,7 @@ ___
    - [전부 메모이제이션해야할까요?](#전부-메모이제이션해야할까요)
    - [불변성과 렌더링](#불변성과-렌더링)
    - [React 컴포넌트 렌더링 성능 측정하기](#react-컴포넌트-렌더링-성능-측정하기)
- - Context와 렌더링 동작
+ - [Context와 렌더링 동작](#context와-렌더링-동작)
 	- Context 기초
 	- Context 값 업데이트하기
 	- State 업데이트, Context, 그리고 재렌더링
@@ -67,7 +67,7 @@ return React.createElement(SomeComponent, {a: 42, b: "testing"}, "Text here")
 // 그리고 element 객체가 됩니다.
 {type: SomeComponent, props: {a:42, b:"testing"}, children: ["Text here"]}
 ```
-이러한 render 결과물을 모든 컴포넌트 트리로부터 모았다면, React는 새로운 객체들의 트리(흔히 말하는 "가상 DOM")와 비교합니다. 그리고 실제 DOM이 해당 render 결과물처럼 변하기 위해 바뀌어야하는 변경점들의 리스트를 만듭니다. 이렇게 비교하고 계산하는 과정이 "[재조정](https://reactjs.org/docs/reconciliation.html)"입니다.
+이러한 render 결과물을 모든 컴포넌트 트리로부터 모았다면, React는 새로운 객체들의 트리(흔히 말하는 "가상 DOM")와 비교합니다. 그리고 실제 DOM이 해당 render 결과물처럼 변하기 위해 바뀌어야 하는 변경점들의 리스트를 만듭니다. 이렇게 비교하고 계산하는 과정이 "[재조정](https://reactjs.org/docs/reconciliation.html)"입니다.
 
 그러고 나서, React는 단 한번의 동기적인 과정으로 DOM을 바꾸기 위해 계산된 모든 변경점들을 적용시킵니다.
 
@@ -100,7 +100,7 @@ React가 컴포넌트를 렌더링 할 때:
 # React는 Render를 어떻게 다룰까?
 
 ## Render 대기열에 담기
-초기 render가 완료된 후에, React에게 re-render를 대기열에 담으라고 요청하는 몇 가지 방식들이 있습니다.
+최초 렌더링이 완료된 후에, React에게 re-render를 대기열에 담으라고 요청하는 몇 가지 방식들이 있습니다.
  - Class 컴포넌트
 	 - `this.setState()`
 	 - `this.forceUpdate()`
@@ -138,7 +138,7 @@ React는 기본적으로 **부모 컴포넌트가 렌더링되면, React는 모�
 
 
 ## React 렌더링 규칙
-React의 주요 규칙 중 하나는 **렌더링은 "순수"해야하고, 어떠한 사이드 이펙트도 일으키면 안된다는 것입니다!** 이는 까다롭고 혼동될 만한 내용인데, 수많은 사이드 이펙트는 명확하지 못하고, 결과적으로 아무 것도 막지 않기 때문입니다. 예를 들어, 엄밀히 말하면 `console.log()`는 사이드 이펙트입니다만, 아무 것도 막지 않습니다. prop을 변경하는 것은 사이드 이펙트고, 아무 것도 막지 않을 *수도*있습니다. AJAX(비동기 서버 요청)을 하는 것은 분명 사이드 이펙트면서, request의 종류에 따라 예상하지 못했던 애플리케이션의 동작을 분명히 야기할 수 있습니다.
+React의 주요 규칙 중 하나는 **렌더링은 "순수"해야하고, 어떠한 사이드 이펙트도 일으키면 안된다는 것입니다!** 이는 까다롭고 혼동될 만한 내용인데, 수많은 사이드 이펙트는 명확하지 못하고, 결과적으로 아무 것도 막지 않기 때문입니다. 예를 들어, 엄밀히 말하면 `console.log()`는 사이드 이펙트입니다만, 아무 것도 막지 않습니다. prop을 변경하는 것은 사이드 이펙트고, 아무 것도 막지 않을 *수도* 있습니다. AJAX(비동기 서버 요청)을 하는 것은 분명 사이드 이펙트면서, request의 종류에 따라 예상하지 못했던 애플리케이션의 동작을 분명히 야기할 수 있습니다.
 
 Sebastian Markbage는 [The Rules of React](https://gist.github.com/sebmarkbage/75f0838967cd003cd7f9ab938eb1958f)라는 제목의 훌륭한 문서를 작성했습니다. 여기서 필자는 서로 다른 React의 라이프사이클에서, `render`와 같은 예상된 동작을 정의하고, "순수"하다고 고려할 만한 표현들이 어떤 것인지, 어떤 것이 안전하지 못한지 정의했습니다. 이 글은 전부 읽을 가치가 있습니다만, 키 포인트만 좀 요약해보자면:
 
@@ -163,7 +163,7 @@ React는 애플리케이션에 존재하는 모든 현재 컴포넌트 인스턴
 
 [여기 React 17에서 `Fiber` 객체를 확인할 수 있습니다.](https://github.com/facebook/react/blob/v17.0.0/packages/react-reconciler/src/ReactFiber.new.js#L47-L174)
 
-렌더링 과정동안, React는 새로운 렌더링 결과를 계산할 때, 트리의 Fiber 객체를 반복해서확인함으로써 업데이트된 트리를 구성합니다.
+렌더링 과정동안, React는 새로운 렌더링 결과를 계산할 때, 트리의 Fiber 객체를 반복적으로 확인함으로써 업데이트된 트리를 구성합니다.
 
 **"Fiber" 객체들은 *실제* 컴포넌트의 props와 state값을 저장합니다.**
 여러분이 컴포넌트의 props와 state를 사용하면, React는 실제로 Fiber 객체에 저장되어진 값에 접근시킵니다. 특히 class 컴포넌트에선, [React는 명시적으로 컴포넌트를 렌더링하기 직전에 `componentInstance.props = newProps`를 복사합니다.](https://github.com/facebook/react/blob/v17.0.0/packages/react-reconciler/src/ReactFiberClassComponent.new.js#L1038-L1042) 그렇기에`this.props`는 존재하나, 오직 React가 Fiber 객체의 내부에서 레퍼런스를 복사했기에 존재합니다. 그런 의미에서 컴포넌트는 Fiber 객체의 일종의 외관일 뿐입니다.
@@ -283,7 +283,8 @@ React-Redux 7버전에서는, [`unstable_batchedUpdates`를 내부적으로 사�
 
 ## Render 동작의 예외
 
-React는 **개발 중에 사용하는 `<React.StrictMode>` 태그의 내부에서 컴포넌트를 두 번 렌더링 할 것입니다.** 이는 당신이 렌더링 로직을 실행하는 횟수가 커밋되는 렌더 과정의 횟수와 같지 *않으며*, 렌더링 횟수를 계산하기 위해 `console.log()`에 의존할 수 없다는 것을 의미합니다. *(역 추가: [React 17부터 React는 자동으로 `console.log()` 같은 콘솔 메서드를 수정해서 생명주기 함수의 두 번째 호출에서 로그를 찍지 않습니다.](https://ko.reactjs.org/docs/strict-mode.html#detecting-unexpected-side-effects))* 대신, React DevTools Profiler를 사용해 전체적인 커밋된 렌더 횟수를 추적하거나, `useEffect` hook이나 `componentDidMount/Update` 라이프사이클에 로깅을 추가할 수 있습니다. 로그는 React가 완전히 렌더 과정을 완료하고 커밋되었을 때만 출력될 것입니다. *(역: 복습하건데, useEffect는 Commit Phase가 끝난 뒤 Passive Effect에 동작하기 때문이죠.)*
+React는 **개발 중에 사용하는 `<React.StrictMode>` 태그의 내부에서 컴포넌트를 두 번 렌더링 할 것입니다.** 이는 당신이 렌더링 로직을 실행하는 횟수가 커밋되는 렌더 과정의 횟수와 같지 *않으며*, 렌더링 횟수를 계산하기 위해 `console.log()`에 의존할 수 없다는 것을 의미합니다. *(역 추가: [React 17부터 React는 자동으로 `console.log()` 같은 콘솔 메서드를 수정해서 생명주기 함수의 두 번째 호출에서 로그를 찍지 않습니다.](https://ko.reactjs.org/docs/strict-mode.html#detecting-unexpected-side-effects))* 대신, React DevTools Profiler를 사용해 전체적인 커밋된 렌더 횟수를 추적하거나, `useEffect` hook이나 `componentDidMount/Update` 라이프사이클에 로깅을 추가할 수 있습니다. 로그는 React가 완전히 렌더 과정을 완료하고 커밋되었을 때만 출력될 것입니다. 
+> 역) 복습하건데, useEffect는 Commit Phase가 끝난 뒤 Passive Effect에 동작하기 때문이죠.
 
 일반적으로, 실제 렌더링 로직에서 *절대* 상태 업데이트를 대기열에 담아선 안됩니다. 다른 말로, click이 발생할 때 `setSomeState()`를 호출하는 click callback을 만드는 것은 괜찮습니다만,`setSomeState()`를 실제 렌더링 동작의 한 파트로 호출해선 안됩니다.
 
@@ -298,6 +299,7 @@ React 컴포넌트의 렌더링 결과물은 언제나 완전히 현재 props와
 일반적으로 소프트웨어의 성능을 향상시키려 할 때, 기본적으로 두가지 접근 방식이 있습니다.
  1. 같은 작업을 빠르게 하거나
  2. 작업을 덜 하거나
+
 React 렌더링을 최적화하는 것은 주로 **2번**에 해당됩니다. 적절할 때, 컴포넌트의 렌더링을 건너뜀으로써 작업량을 줄이는 것이죠.
 
 ## 컴포넌트 Render 최적화 기법
@@ -404,7 +406,7 @@ Dan Abramov(Redux 개발자)는 [메모이제이션은 여전히 props를 비교
 > _스스로 답해보세요:_
 > _왜 모든 함수에 Lodash 의 memoize() 를 쓰지 않는거죠? 그게 더 빠르지 않나요?_
 
-또한, 이것에 대한 특정한 링크는 없지만, 아마 모든 컴포넌트에 기본적으로 메모이제이션을 적용시킨다면, 사람들이 데이터를 변경하는 것이 아닌 새로 갱신하는 경우에, 아마 버그가 발생할 것입니다.
+또한, 이것에 대한 특정한 링크는 없지만, 아마 모든 컴포넌트에 기본적으로 메모이제이션을 적용시킨다면, 사람들이 데이터를 새로 갱신하는 것이 아닌 변화시키는 경우에, 아마 버그가 발생할 것입니다.
 > 역) mutating rather than updating it immutably 라는데, 전자가 값의 변화, 후자는 레퍼런스의 변화로 해석했습니다.
 
 저는 Twitter에서 Dan과 이 트윗과 관련된 몇몇 토론을 했습니다. 저는 개인적으로 `React.memo()`를 광범위하게 사용하는 것이 전반적인 렌더링 성능의 향상으로 이루어질 것이라고 보았습니다. [작년에 트위터에서 한 말:](https://twitter.com/acemarke/status/1141755698948165632)
@@ -424,7 +426,7 @@ React issue란에 ["언제 React.memo를 쓰면 **안**되나요?"](https://gith
 (이 블로그 게시물은 해당 트윗 스레드의 오래 지연되고, 확장된 버전입니다.)
 
 ## 불변성과 렌더링
-React에서 **State 변화는 언제나 불변적으로 행해져야 합니다.** 여기엔 두 가지 주된 이유가 있습니다:
+React에서 **State 변화는 언제나 불변적(immutably)으로 행해져야 합니다.** 여기엔 두 가지 주된 이유가 있습니다:
  - 무엇을 어디서 바꿨는지에 따라, 렌더링 될 것이라 예상했던 컴포넌트가 결과적으로 렌더링되지 않을 수 있습니다.
  - 언제, 왜 데이터가 실제로 업데이트되었는지에 혼란을 일으킵니다.
 
@@ -434,11 +436,12 @@ React에서 **State 변화는 언제나 불변적으로 행해져야 합니다.*
 
 만약 변화시킨다면, `someValue`는 같은 레퍼런스를 가지고 있으므로, 컴포넌트는 변화가 없다고 가정합니다.
 > 여기서 말하는 *변화(mutate)*는 state의 레퍼런스를 유지한 채 값을 갱신하는 것을 말합니다.
-> ex) state += 1
+> ex) props.someValue = "newValue"
 
 구체적으로 우리가 불필요한 재렌더링을 피함으로써 성능 최적화를 시도한다는 점에 집중하세요. 만약 props가 변하지 않았다면 렌더링은 "불필요"하거나 "낭비"입니다. 만약 변화시킨다면, 컴포넌트는 아무것도 변하지 않았다고 잘못 생각할 것이고, 여러분은 컴포넌트가 재렌더링되지 않는 것에 의문을 품게 될 겁니다.
 
 또 다른 문제는, `useState`와 `useReducer` 훅입니다. `setCounter()`나 `dispatch()`함수를 호출할 때마다, React는 재렌더링을 대기열에 담습니다. 그렇지만, React는 어떤 hook이던 state의 변경은 반드시 새로운 state 값으로써 새로운 레퍼런스를 반환/전달해야합니다. 그것이 새로운 객체/배열의 레퍼런스던, 혹은 새로운 원시타입이던간에 말이죠. (string/number 등)
+> 역) 실제로 useReducer의 dispatch action이나, setState로 원시타입인 경우 같은 값을, 객체인 경우 같은 레퍼런스를 담아보세요! 아무 변화도 일어나지 않습니다.
 
 React는 모든 state의 변화를 render phase에 수용합니다. React가 hook으로부터 state변화를 수용하려 할 때, 새로운 값이 같은 레퍼런스인지 확인합니다. React는 _언제나_ 업데이트 대기열에 담아둔 컴포넌트의 렌더링을 완료합니다. 그렇지만, 만약 그 값이 이전과 같은 레퍼런스라면, 그리고 렌더링을 지속해야하는 또 다른 이유가 없더라면(부모 컴포넌트가 렌더링되었다던가 하는), React는 컴포넌트에 대한 렌더링 결과를 버리고, 렌더 과정에서 완전히 빠져나갑니다. 따라서, 이렇게 배열을 변화시키면:
 ```js
@@ -472,6 +475,11 @@ this.setState({todos});
 
 모든 실제 렌더링 동작을 넘어, 변화는 React의 단방향 데이터 흐름에 혼란을 줍니다. 변화는 전혀 바뀌지 않았다고 예상될 때도 다른 코드들이 값들을 확인하도록 만듭니다. 이는 실제로 업데이트를 하기로 되어 있는지, 어디서 변화가 발생한 것인지 파악하기 더 힘들게 만듭니다.
 
-결론: **React나, 다른 React환경에서 변할 수 없는 업데이트를 가정합니다. 값을 변화시키면, 버그가 발생할 위험을 안고 가는 것이니, 그러지 마십시오.**
+결론: **React나, 다른 React환경은 immutable한 업데이트를 가정합니다. 값을 변화시키면, 버그가 발생할 위험을 안고 가는 것이니, 그러지 마십시오.**
 
 ## React 컴포넌트 렌더링 성능 측정하기
+[React DevTools Profiler](https://reactjs.org/blog/2018/09/10/introducing-the-react-profiler.html)를 사용해서 어떤 컴포넌트들이 렌더링되는지 확인해보세요. 예상과 다르게 렌더링되는 컴포넌트들을 찾고, DevTools를 이용해서 *왜* 그 컴포넌트들이 렌더링되었는지 확인하고, 수정하세요.(아마 `React.memo()`로  감싸거나, 부모 컴포넌트에서 내려주는 props값을 메모이제이션 하는 등의 방법으로 수정될겁니다.)
+
+또한, React는 개발 빌드중에 정말 느리게 동작한다는 점을 기억하세요. 개발 모드에서 어떤 컴포넌트가 왜 렌더링되었는지 확인하고, 컴포넌트마다 렌더링하는데 소요되는 *상대적인* 시간을 측정하여 애플리케이션의 성능을 분석할 수 있습니다.("컴포넌트 B는 컴포넌트 A보다 렌더링을 마치기까지 시간이 3배나 걸리더라.." 처럼요.) 하지만, 개발 빌드중에 렌더링에 걸리는 절대적인 시간을 측정하는 것은 절대 안됩니다. - 절대적인 시간 측정은 프로덕션 빌드에서만! 실제로 개발모드의 프로파일러를 사용해 프로덕션 빌드와 유사한 시간 데이터를 측정하고 싶다면 [특별한 React의 "프로파일링" 빌드](https://kentcdodds.com/blog/profile-a-react-app-for-performance)를 사용해야 합니다.
+
+# Context와 렌더링 동작

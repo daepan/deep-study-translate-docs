@@ -3,4 +3,4 @@
 
 ---
 
-1. [React 렌더링 동작에 관한 (거의) 완벽한 가이드](./ReactRenderingBehaviorGuide.md) (작성중)
+1. [React 렌더링 동작에 관한 (거의) 완벽한 가이드](./ReactRenderingBehaviorGuide.md)

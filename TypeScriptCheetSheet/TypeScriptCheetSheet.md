@@ -1,0 +1,51 @@
+# TypeScript 치트시트 번역본
+> 타입스크립트를 공부하면서 치트시트로 공부하는 속성공부가 있는데
+역시나 영어로 되어있다. 조금은 영어실력을 늘리기 위해 한번 번역해 보곘다.
+
+## 클래스
+
+### 키포인트
+>TypeScript 클래스는 ES2015 자바스크립트 클래스에 대한 몇 가지 유형별 확장 기능과 하나 또는 두 개의 런타임 추가 기능을 가지고 있습니다.
+
+* 클래스 객체 생성하기
+```tsx
+class ABC{...}
+const abc = new ABC()
+```
+new ABC에 대한 `parameter`는 생성자 함수로부터 온다.
+
+* private X vs #private
+
+private X
+형식 전용 추가이며 런타임에는 적용되지 않습니다. 
+다음 경우 클래스 외부의 코드가 항목에 도달할 수 있습니다.
+```tsx
+class Bag{
+    private item : any
+}
+```  
+#private
+#private는 런타임 비공개이며 Javascript 엔진 내부에 클래스 내에서만 액세스할 수 있는 강제성을 가지고 있습니다.
+```tsx
+class Bag{ #item: any }
+```
+클래스 안에서의 `this`
+
+함수 내부의 'this' 값은 함수를 호출하는 방법에 따라 달라집니다.  
+다른 언어에서 익숙할 수 있는 클래스 인스턴스가 항상 보장되는 것은 아닙니다.
+
+'this parameter'를 사용하거나, 바인딩 함수 또는 화살표 함수를 사용하여 문제가 발생할 때 해결할 수 있습니다.
+
+* Type과 Value
+  
+클래스를 `type` 또는 `value`으로 모두 사용할 수 있습니다.
+```tsx
+    const a:Bag = new Bag()
+    //여기서 a:Bag로 사용된 Bag은 type
+    //뒤에 new Bag으로 사용된 Bag은 value로 사용되었다. 
+    /*
+        주의 사항!
+    */
+   class C implement Bag{} // 이와 같이 사용하는 것은 지양!
+```
+

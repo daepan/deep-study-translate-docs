@@ -49,3 +49,47 @@ class Bag{ #item: any }
    class C implement Bag{} // 이와 같이 사용하는 것은 지양!
 ```
 
+## 기본 문법
+
+```tsx
+    //User클래스에 하위클래스 Account       
+    //클래스가 인터페이스 또는 유형 집합을 준수하는지 확인합니다.
+    class User extends Accout implements Updatable, Serializable{
+        id: string;               //field: 클래스에서 사용이 가능한 필수 공용 속성 
+        displayName?: boolean;    //optional field: 클래스에서 사용이 가능한 선택 공용 속성  
+        name!: string;            //identify field(존재 주장 field): 따로 정의하지 않아도 괜찮은 공용속성
+        #attributes: Map<any, any>;//private field
+        roles=["user"];            //field 기본값 선언
+        readonly createAt = new Date()//readonly 속성 + 기본값 선언
+        
+        constructor(id: string, email: string){
+            super(id);
+            this.email = email;
+        }
+
+        setName(name: string) { this.name = name }
+        verifyName = (name: string) =>  Promuse<{...}>
+
+        sync(): Promuse<{...}>
+        sync(cb:((result: string)=> void)): void
+        sync(cb?:((result: string)=> void)): void |  Promuse<{...}>  Promuse<{...}>
+
+        get accountID(){}
+        set accountID(value: string) {}
+
+        private makeRequest() { ... }
+        protected handleRequest() { ... }
+
+        static #userCount = 0;
+        static registerUser(user: User) { ... }
+
+        static { this.#userCount = -1 }
+    }
+    
+```
+TypeScript는 인터페이스에서 선택적으로 속성을 선언할 수 있다.
+
+```tsx
+
+
+```

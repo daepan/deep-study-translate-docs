@@ -62,28 +62,35 @@ class Bag{ #item: any }
         roles=["user"];            //field 기본값 선언
         readonly createAt = new Date()//readonly 속성 + 기본값 선언
         
-        constructor(id: string, email: string){
+        constructor(id: string, email: string){//코드가 new 함수를 호출한다.
             super(id);
-            this.email = email;
+            this.email = email; 
+            //In strict : true 이 코드가 올바르게 설정되었는지 확인하기 위해 field에 대해 검사됩니다.
         }
 
         setName(name: string) { this.name = name }
         verifyName = (name: string) =>  Promuse<{...}>
+        //클래스 메서드를 설명하는 방법(및 화살표 함수 fieds)
 
         sync(): Promuse<{...}>
         sync(cb:((result: string)=> void)): void
         sync(cb?:((result: string)=> void)): void |  Promuse<{...}>  Promuse<{...}>
+        //overload 정의가 두 개 있는 함수
 
         get accountID(){}
         set accountID(value: string) {}
+        //getter. setter
 
         private makeRequest() { ... }
         protected handleRequest() { ... }
-
+        //이 클래스는 private 접근만 허용되고 하위 클래스에 대한 protected가 됩니다. 
+        //유형 확인에만 사용되며, public이 기본값입니다.
+        
         static #userCount = 0;
-        static registerUser(user: User) { ... }
+        static registerUser(user: User) { ... }//static fields와 methods
 
         static { this.#userCount = -1 }
+        //Static blocks는 static var로 세팅된다. this는 클래스를 참고한다.
     }
     
 ```

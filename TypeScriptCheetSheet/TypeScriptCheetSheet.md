@@ -72,9 +72,9 @@ class Bag{ #item: any }
         verifyName = (name: string) =>  Promuse<{...}>
         //클래스 메서드를 설명하는 방법(및 화살표 함수 fieds)
 
-        sync(): Promuse<{...}>
-        sync(cb:((result: string)=> void)): void
-        sync(cb?:((result: string)=> void)): void |  Promuse<{...}>  Promuse<{...}>
+        sync(): Promise<{...}>
+        sync(cb:((result: string) => void)): void
+        sync(cb?:((result: string) => void)): void |  Promise<{...}>  Promise<{...}>
         //overload 정의가 두 개 있는 함수
 
         get accountID(){}
@@ -94,9 +94,30 @@ class Bag{ #item: any }
     }
     
 ```
-TypeScript는 인터페이스에서 선택적으로 속성을 선언할 수 있다.
+Generics
+TypeScript는 클래스 메서드에서 변경할 수 있는 유형을 선언합니다.
 
 ```tsx
+class Box<Type>{//클래스 타입 파라미터
+    contents: Type
+    constructor(value: Type) {
+        this.contents = value;
+    }
+    const stringBox = new Box(" a package")
+}
 
+```
 
+Generics 기능은 현재 구문으로는 JavaScript에 들어가지 못할 수 있는 TypeScript 특정 언어 확장입니다.
+
+Parameter Properties
+
+TypeScript의 확장된 기능으로 class들에서의 지정된 객체 field를 자동적으로 input parameter로 설정하는 기능입니다.
+```tsx
+class Location {
+    constructor(public x: number, public y: number) {}
+}
+const loc = new Location(20, 40);
+loc.x //20;
+loc.y //40;
 ```
